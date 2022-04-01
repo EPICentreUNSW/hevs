@@ -1,0 +1,5 @@
+{
+	"displayName": "HEVS Example Configs",
+	"description": "These sample assets demonstrate various configuration options for HEVS.\n\nIncluded is an example warp offset image.\n\nIt is recommended that you copy these assets into your StreamingAssets folder.",
+	"createSeparatePackage": false
+}

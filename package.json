@@ -1,0 +1,33 @@
+{
+  "name": "com.epicentreunsw.hevs",
+  "version": "2.0.0",
+  "displayName": "HEVS",
+  "description": "HEVS (High-End Visualization System) is a Unity plugin that attempts to simplify the creation of cross-platform multi-modal visualization projects across various display mediums (hardware solutions), including within clustered display environments.\n\nHEVS supports various visualisation platforms, including PC, CAVE, XR, Multitouch Walls, Hemispherical Domes and other curved projection-based displays, such as cylinders, and includes warping & blending functionallity.\n\nAlthough it is impossible to automatically cover all platforms, the philosophy of HEVS is to make it as easy as possible to create a single application that can run in various environments, attempting to allow for a single executable to run on different display modalities without the need to re-build.",
+  "unity": "2021.2",
+  "author": {
+    "name": "EPICentre UNSW",
+    "email": "epicentre@unsw.edu.au",
+    "url": "http://epicentre.matters.today"
+  },
+  "hideInEditor": false,
+  "keywords": [
+    "cluster",
+    "visualisation",
+    "CAVE",
+    "dome",
+    "stereoscopic"
+  ],
+  "dependencies": {
+    "com.unity.textmeshpro": "2.1.6"
+  },
+  "changelogUrl": "https://github.com/EPICentreUNSW/hevs/blob/main/CHANGELOG.md",
+  "documentationUrl": "https://github.com/EPICentreUNSW/hevs/blob/main/Documentation~/Readme.md",
+  "licensesUrl": "https://github.com/EPICentreUNSW/hevs/main/LICENSE.md",
+  "samples": [
+    {
+      "displayName": "HEVS Example Configs",
+      "description": "These sample assets demonstrate various configuration options for HEVS.\n\nIncluded is an example warp offset image.\n\nIt is recommended that you copy these assets into your StreamingAssets folder.",
+      "path": "Samples~/Configs"
+    }
+  ]
+}

@@ -1,0 +1,224 @@
+// Single-line comments are supported.
+{       
+  "globals": { 
+
+  },
+
+  // Platforms contains object definitions for specific installation configurations.
+  // Platforms can inherit from previously defined platforms and then override/extend them.
+  "platforms": {
+
+    "LocalCluster": {
+      "cluster": {
+        "master": "master", "framelock": "software"
+      },
+      "nodes": {
+        "master": {"resolution": [ 800, 600 ], "fullscreen": false },
+        "client0": {"resolution": [ 800, 600 ], "fullscreen": false },
+        "client1": {"resolution": [ 800, 600 ], "fullscreen": false }
+      }
+    },
+
+    // An example non-clustered platform than uses Red-Cyan anaglyph stereoscopic rendering.
+    // NOTE: Anaglyphs currently do not work on OpenGL platforms (a fix is coming)
+    "Anaglyph": { 
+      "stereo": { "mode": "redcyan" } 
+    },
+
+    // An example non-clustered platform that uses viewports to output 4 views onto a single display.
+    "CAVE": {
+      "nodes": { "localhost": { "display": [ "disp_forward", "disp_left", "disp_right", "disp_up" ] } },
+
+      "displays": {
+        "disp_forward": { "type": "offaxis", "ul": [-1.0, 2.0, 2.0 ], "ll": [-1.0, 0.0, 2.0 ], "lr": [ 1.0, 0.0, 2.0 ], "viewport": "vp_forward" },
+        "disp_left": { "type": "offaxis", "ul": [-1.0, 2.0, 0.0 ], "ll": [-1.0, 0.0, 0.0 ], "lr": [-1.0, 0.0, 2.0 ], "viewport": "vp_left" },
+        "disp_right": { "type": "offaxis", "ul": [ 1.0, 2.0, 2.0 ], "ll": [ 1.0, 0.0, 2.0 ], "lr": [ 1.0, 0.0, 0.0 ], "viewport": "vp_right" },
+        "disp_up": { "type": "offaxis", "ul": [-1.0, 2.0, 0.0 ], "ll": [-1.0, 2.0, 2.0 ], "lr": [ 1.0, 2.0, 2.0 ], "viewport": "vp_up" }
+      },
+
+      "viewports": {
+        "vp_forward": { "x": 0, "y": 0, "width": 0.5, "height": 0.5 },
+        "vp_left": { "x": 0.5, "y": 0.5, "width": 0.5, "height": 0.5 },
+        "vp_right": { "x": 0.5, "y": 0, "width": 0.5, "height": 0.5 },
+        "vp_up": { "x": 0, "y": 0.5, "width": 0.5, "height": 0.5 }
+      },
+      "stereo": { "mode": "sidebyside", "swap_eyes": false } 
+    },
+
+    // The EPICylinder located at the EPICentre UNSW Art & Design campus, using a 29-node cluster with hardware stereoscopic quad-buffering.
+    "EPICylinder": {
+      "type": "Cylinder",
+      "globals": { "radius": 3.0 },
+
+      "cluster": { "master": "cyl29", "data_port": 7777, "sync_port": 7778, "packet_limit": 1048576,
+                   "auto_sync_rigid": true, "disable_client_physics": true, "client_timeout": 10000,
+                   "framelock": "hardware", "framelock_master": "cyl14", "lock_port": 7779 },
+
+      // The index property has no effect on the operation of HEVS, but can be used by certain applications if needed.
+      // The EPICylinder master node is not part of the cylindrical display.
+      "nodes": {
+        "cyl29": { "address": "192.168.1.129", "display": "disp_master", "resolution": [ 800, 600 ], "fullscreen": false, "hardware_synced": false, "index": [ 7, 0 ] },
+        "cyl01": { "address": "192.168.1.101", "display": "disp_cyl01", "resolution": [ 1920, 2160 ], "index": [0, 0] },
+        "cyl02": { "address": "192.168.1.102", "display": "disp_cyl02", "resolution": [ 1920, 2160 ], "index": [0, 1] },
+        "cyl03": { "address": "192.168.1.103", "display": "disp_cyl03", "resolution": [ 1920, 2160 ], "index": [1, 0] },
+        "cyl04": { "address": "192.168.1.104", "display": "disp_cyl04", "resolution": [ 1920, 2160 ], "index": [1, 1] },
+        "cyl05": { "address": "192.168.1.105", "display": "disp_cyl05", "resolution": [ 1920, 2160 ], "index": [2, 0] },
+        "cyl06": { "address": "192.168.1.106", "display": "disp_cyl06", "resolution": [ 1920, 2160 ], "index": [2, 1] },
+        "cyl07": { "address": "192.168.1.107", "display": "disp_cyl07", "resolution": [ 1920, 2160 ], "index": [3, 0] },
+        "cyl08": { "address": "192.168.1.108", "display": "disp_cyl08", "resolution": [ 1920, 2160 ], "index": [3, 1] },
+        "cyl09": { "address": "192.168.1.109", "display": "disp_cyl09", "resolution": [ 1920, 2160 ], "index": [4, 0] },
+        "cyl10": { "address": "192.168.1.110", "display": "disp_cyl10", "resolution": [ 1920, 2160 ], "index": [4, 1] },
+        "cyl11": { "address": "192.168.1.111", "display": "disp_cyl11", "resolution": [ 1920, 2160 ], "index": [5, 0] },
+        "cyl12": { "address": "192.168.1.112", "display": "disp_cyl12", "resolution": [ 1920, 2160 ], "index": [5, 1] },
+        "cyl13": { "address": "192.168.1.113", "display": "disp_cyl13", "resolution": [ 1920, 2160 ], "index": [6, 0] },
+        "cyl14": { "address": "192.168.1.114", "display": "disp_cyl14", "resolution": [ 1920, 2160 ], "index": [6, 1] },
+        "cyl15": { "address": "192.168.1.115", "display": "disp_cyl15", "resolution": [ 1920, 2160 ], "index": [7, 0] },
+        "cyl16": { "address": "192.168.1.116", "display": "disp_cyl16", "resolution": [ 1920, 2160 ], "index": [7, 1] },
+        "cyl17": { "address": "192.168.1.117", "display": "disp_cyl17", "resolution": [ 1920, 2160 ], "index": [8, 0] },
+        "cyl18": { "address": "192.168.1.118", "display": "disp_cyl18", "resolution": [ 1920, 2160 ], "index": [8, 1] },
+        "cyl19": { "address": "192.168.1.119", "display": "disp_cyl19", "resolution": [ 1920, 2160 ], "index": [9, 0] },
+        "cyl20": { "address": "192.168.1.120", "display": "disp_cyl20", "resolution": [ 1920, 2160 ], "index": [9, 1] },
+        "cyl21": { "address": "192.168.1.121", "display": "disp_cyl21", "resolution": [ 1920, 2160 ], "index": [10, 0] },
+        "cyl22": { "address": "192.168.1.122", "display": "disp_cyl22", "resolution": [ 1920, 2160 ], "index": [10, 1] },
+        "cyl23": { "address": "192.168.1.123", "display": "disp_cyl23", "resolution": [ 1920, 2160 ], "index": [11, 0] },
+        "cyl24": { "address": "192.168.1.124", "display": "disp_cyl24", "resolution": [ 1920, 2160 ], "index": [11, 1] },
+        "cyl25": { "address": "192.168.1.125", "display": "disp_cyl25", "resolution": [ 1920, 2160 ], "index": [12, 0] },
+        "cyl26": { "address": "192.168.1.126", "display": "disp_cyl26", "resolution": [ 1920, 2160 ], "index": [12, 1] },
+        "cyl27": { "address": "192.168.1.127", "display": "disp_cyl27", "resolution": [ 1920, 2160 ], "index": [13, 0] },
+        "cyl28": { "address": "192.168.1.128", "display": "disp_cyl28", "resolution": [ 1920, 2160 ], "index": [13, 1] }
+        },
+
+      "displays": {
+        "disp_master": { "stereo_mode": "mono" },
+        "disp_cyl01": { "type": "offaxis", "index": [ 0, 0 ], "ul": [ 0.043, 3.092,-3.099 ], "ll": [ 0.043, 1.595,-3.099 ], "lr": [-1.253, 1.595,-2.841 ] },
+        "disp_cyl02": { "type": "offaxis", "index": [ 0, 1 ], "ul": [ 0.043, 1.593,-3.099 ], "ll": [ 0.043, 0.095,-3.099 ], "lr": [-1.253, 0.095,-2.841 ] },
+        "disp_cyl03": { "type": "offaxis", "index": [ 1, 0 ], "ul": [-1.254, 3.092,-2.840 ], "ll": [-1.254, 1.595,-2.840 ], "lr": [-2.332, 1.595,-2.075 ] },
+        "disp_cyl04": { "type": "offaxis", "index": [ 1, 1 ], "ul": [-1.254, 1.593,-2.840 ], "ll": [-1.254, 0.095,-2.840 ], "lr": [-2.332, 0.095,-2.075 ] },
+        "disp_cyl05": { "type": "offaxis", "index": [ 2, 0 ], "ul": [-2.334, 3.092,-2.074 ], "ll": [-2.334, 1.595,-2.074 ], "lr": [-3.005, 1.595,-0.936 ] },
+        "disp_cyl06": { "type": "offaxis", "index": [ 2, 1 ], "ul": [-2.334, 1.593,-2.074 ], "ll": [-2.334, 0.095,-2.074 ], "lr": [-3.005, 0.095,-0.936 ] },
+        "disp_cyl07": { "type": "offaxis", "index": [ 3, 0 ], "ul": [-3.006, 3.092,-0.934 ], "ll": [-3.006, 1.595,-0.934 ], "lr": [-3.154, 1.595, 0.379 ] },
+        "disp_cyl08": { "type": "offaxis", "index": [ 3, 1 ], "ul": [-3.006, 1.593,-0.934 ], "ll": [-3.006, 0.095,-0.934 ], "lr": [-3.154, 0.095, 0.379 ] },
+        "disp_cyl09": { "type": "offaxis", "index": [ 4, 0 ], "ul": [-3.153, 3.092, 0.381 ], "ll": [-3.153, 1.595, 0.381 ], "lr": [-2.752, 1.595, 1.640 ] },
+        "disp_cyl10": { "type": "offaxis", "index": [ 4, 1 ], "ul": [-3.153, 1.593, 0.381 ], "ll": [-3.153, 0.095, 0.381 ], "lr": [-2.752, 0.095, 1.640 ] },
+        "disp_cyl11": { "type": "offaxis", "index": [ 5, 0 ], "ul": [-2.751, 3.092, 1.642 ], "ll": [-2.751, 1.595, 1.642 ], "lr": [-1.871, 1.595, 2.627 ] },
+        "disp_cyl12": { "type": "offaxis", "index": [ 5, 1 ], "ul": [-2.751, 1.593, 1.642 ], "ll": [-2.751, 0.095, 1.642 ], "lr": [-1.871, 0.095, 2.627 ] },
+        "disp_cyl13": { "type": "offaxis", "index": [ 6, 0 ], "ul": [-1.869, 3.092, 2.629 ], "ll": [-1.869, 1.595, 2.629 ], "lr": [-0.663, 1.595, 3.168 ] },
+        "disp_cyl14": { "type": "offaxis", "index": [ 6, 1 ], "ul": [-1.869, 1.593, 2.629 ], "ll": [-1.869, 0.095, 2.629 ], "lr": [-0.663, 0.095, 3.168 ] },
+        "disp_cyl15": { "type": "offaxis", "index": [ 7, 0 ], "ul": [-0.661, 3.092, 3.169 ], "ll": [-0.661, 1.595, 3.169 ], "lr": [ 0.661, 1.595, 3.169 ] },
+        "disp_cyl16": { "type": "offaxis", "index": [ 7, 1 ], "ul": [-0.661, 1.593, 3.169 ], "ll": [-0.661, 0.095, 3.169 ], "lr": [ 0.661, 0.095, 3.169 ] },
+        "disp_cyl17": { "type": "offaxis", "index": [ 8, 0 ], "ul": [ 0.663, 3.092, 3.168 ], "ll": [ 0.663, 1.595, 3.168 ], "lr": [ 1.869, 1.595, 2.629 ] },
+        "disp_cyl18": { "type": "offaxis", "index": [ 8, 1 ], "ul": [ 0.663, 1.593, 3.168 ], "ll": [ 0.663, 0.095, 3.168 ], "lr": [ 1.869, 0.095, 2.629 ] },
+        "disp_cyl19": { "type": "offaxis", "index": [ 9, 0 ], "ul": [ 1.871, 3.092, 2.627 ], "ll": [ 1.871, 1.595, 2.627 ], "lr": [ 2.751, 1.595, 1.642 ] },
+        "disp_cyl20": { "type": "offaxis", "index": [ 9, 1 ], "ul": [ 1.871, 1.593, 2.627 ], "ll": [ 1.871, 0.095, 2.627 ], "lr": [ 2.751, 0.095, 1.642 ] },
+        "disp_cyl21": { "type": "offaxis", "index": [10, 0 ], "ul": [ 2.752, 3.092, 1.640 ], "ll": [ 2.752, 1.595, 1.640 ], "lr": [ 3.153, 1.595, 0.381 ] },
+        "disp_cyl22": { "type": "offaxis", "index": [10, 1 ], "ul": [ 2.752, 1.593, 1.640 ], "ll": [ 2.752, 0.095, 1.640 ], "lr": [ 3.153, 0.095, 0.381 ] },
+        "disp_cyl23": { "type": "offaxis", "index": [11, 0 ], "ul": [ 3.154, 3.092, 0.379 ], "ll": [ 3.154, 1.595, 0.379 ], "lr": [ 3.006, 1.595,-0.934 ] },
+        "disp_cyl24": { "type": "offaxis", "index": [11, 1 ], "ul": [ 3.154, 1.593, 0.379 ], "ll": [ 3.154, 0.095, 0.379 ], "lr": [ 3.006, 0.095,-0.934 ] },
+        "disp_cyl25": { "type": "offaxis", "index": [12, 0 ], "ul": [ 3.005, 3.092,-0.936 ], "ll": [ 3.005, 1.595,-0.936 ], "lr": [ 2.334, 1.595,-2.074 ] },
+        "disp_cyl26": { "type": "offaxis", "index": [12, 1 ], "ul": [ 3.005, 1.593,-0.936 ], "ll": [ 3.005, 0.095,-0.936 ], "lr": [ 2.334, 0.095,-2.074 ] },
+        "disp_cyl27": { "type": "offaxis", "index": [13, 0 ], "ul": [ 2.332, 3.092,-2.075 ], "ll": [ 2.332, 1.595,-2.075 ], "lr": [ 1.254, 1.595,-2.840 ] },
+        "disp_cyl28": { "type": "offaxis", "index": [13, 1 ], "ul": [ 2.332, 1.593,-2.075 ], "ll": [ 2.332, 0.095,-2.075 ], "lr": [ 1.254, 0.095,-2.840 ] }
+      },
+
+      "stereo": { "mode": "quadbuffered", "separation": 0.065, "alignment": "screen", "separate_eyes": true },
+
+      "trackers": {
+        "Wand": { "type": "vrpn", "address": "Wand@cyltracking", "apply_rotation": true, "forward": "Y", "right": "X", "up": "Z", "handedness": "right", "transform": { "translate": [0,0,0], "rotate": [0,0,0] } },
+        "Head": { "type": "vrpn", "address": "Head@cyltracking", "apply_rotation": true, "forward": "Y", "right": "X", "up": "Z", "handedness": "right", "transform": { "translate": [0,0,0], "rotate": [0,0,0] } }
+      }
+    },
+
+    // A copy of the EPICylinder but uses mono stereoscopic by default.
+    "EPICylinderMono": {
+      "inherit": "EPICylinder",
+      "stereo": { "mode": "mono" }
+    },
+
+    // A dual-monitor display that assumes the displays create a corner "wedge".
+    // Doesn't use off-axis displays for perspective correction! Useful for simple 2D displays.
+    "CAVE-DualDisplay": {
+      "nodes": { "localhost": { "displays": [ "disp_l", "disp_r" ] } },
+      "displays": {
+        "disp_l": { "monitor": 0, "transform": { "rotate": [0, -45, 0] } },
+        "disp_r": { "monitor": 1, "transform": { "rotate": [0, 45, 0] } }
+      }
+    },
+
+    // A display that uses an image containing UV offsets to warp an output image.
+    // The image contains floating-point data and is generated by the warp calibration tool.
+    "WarpDisplay": {
+      "nodes": { "localhost": { "display": "disp_warped" } },
+      "displays": {
+        "disp_warped": { "warp_path": "StreamingAssets/warp_example.tif" }
+      }
+    },
+
+    // A single stereoscopic projector display that acts as a "window".
+    "StereoWall": {
+      "nodes": { "localhost": { "display": "disp_forward" } },
+      "displays": { "disp_forward": { "type": "offaxis", "ul": [-2.0, 3.0, 2.0 ], "ll": [-2.0, 1.0, 2.0 ], "lr": [ 2.0, 1.0, 2.0 ] } },
+      "stereo": { "mode": "topbottom", "separation": 0.065 }
+    },
+
+    // An inherited version of the StereoWall that uses head-tracking to modify the perspective.
+    "StereoWallTracked": {
+      "inherit": "StereoWall",
+      "trackers": { "Head": { "type": "vrpn", "address": "Head@tracker", "apply_rotation": true, "forward": "Y", "right": "X", "up": "Z", "handedness": "right" } },
+      "stereo": { "alignment": "camera", "tracker": "Head"  }
+    },
+
+    // A single-node dual monitor display that projects onto a 120-degree curved surface 4.25m away from the viewer.
+    // It also uses side-by-side stereoscopic rendering for the first display, with a warp, and top-bottom for the second display.
+    "MultiProjectorCurved": {
+      "nodes": { "localhost": { "display": ["disp_l", "disp_r"], "resolution": [ 5120, 3200 ] } },
+
+      "displays": {
+        "disp_l": { "type": "curved", "monitor": 0, "slices": 4, "blackLevel": 1, "radius": 4.25, "height": 2.9, "angle_start": -60, "angle_end": 0, "stereo_mode": "sidebyside", "warp_path": "StreamingAssets/warp_example.tif" },
+        "disp_r": { "type": "curved", "monitor": 1, "slices": 4, "blackLevel": 1, "radius": 4.25, "height": 2.9, "angle_start": 0, "angle_end": 60, "stereo_mode": "topbottom" }
+      }
+    }, 
+    
+    // A dome display that captures a fisheye image and assumes you are using a fisheye projector to output the entire image.
+    // The dome also captures the image slightly tilted. 
+    "FisheyeDome": {
+      "nodes": { "localhost": { "display": "disp_dome" } },
+      "displays": {
+        "disp_dome": { "type": "dome", "fisheye_resolution": [ 4096, 4096 ], "radius": 3.0, "transform": { "rotate": [-45,0,0] } }
+        }
+    },
+
+    // The FullDome located at the EPICentre, using 8 projectors to create a ~4k display.
+    // The dome uses a collection of warp meshes stored in csv files along with blend textures.
+    // NOTE: This will not work unless you have the specified warp & blend files.
+    "FullDome": {
+      "nodes": { "localhost": { "display": "disp_dome", "resolution": [ 10240, 3200 ] } },
+      "displays": {
+        "disp_dome": { "type": "dome",
+          "fisheye_resolution": [ 4096, 4096 ], "projector_count": 8, "layout": [ 4, 2 ], "aspect_scale": 1,
+          "warp_mesh_path": "N:/DomeLab/Calibration", 
+          "transform": { "translate": [0.0, 0.0, 0.0], "rotate": [-90.0, 0.0, 0.0] }, "radius": 3.0 }
+        }
+    },
+
+    // An example of a multi-node cluster using VIOSO warp & blend. Each node has a single projector, and the 
+    // vwf on each node stores its own relevent warp & blend information.
+    // NOTE: This will not work unless you have the specified warp & blend files and matching cluster!
+    "MultiProjectorDomeCluster": {
+      "cluster": { "master": "ig0", "framelock": "software", "data_port": 7777, "sync_port": 7778, "packet_limit": 1048576 },
+
+      "nodes": {
+        "ig0": { "address": "ig0", "display": "disp_dome", "resolution": [ 2560, 1600 ] },
+        "ig1": { "address": "ig1", "display": "disp_dome", "resolution": [ 2560, 1600 ] },
+        "ig2": { "address": "ig2", "display": "disp_dome", "resolution": [ 2560, 1600 ] },
+        "ig3": { "address": "ig3", "display": "disp_dome", "resolution": [ 2560, 1600 ] }
+      },
+
+      "displays": {
+        "disp_dome": { "type": "dome",
+          "fisheye_resolution": [ 4096, 4096 ], "projector_count": 1, 
+          "vioso_path": "C:/DomeCalibration/vioso.vwf", "smooth_border": true, "border_percent": 2,
+          "transform": { "translate": [0.0, 0.0, 0.0], "rotate": [0.0, 0.0, 0.0] }, "radius": 3.0 }
+        }
+    }
+  }
+}
