@@ -74,7 +74,7 @@ namespace HEVS
         /// <summary>
         /// Access to the primary camera used to capture the scene for this display.
         /// </summary>
-        public UnityEngine.Camera primaryCaptureCamera { get { return captureCameras[0]; } }
+        public UnityEngine.Camera primaryCaptureCamera => captureCameras[0];
 
         /// <summary>
         /// Access to the camera components created for this display to output the scene.
@@ -84,48 +84,48 @@ namespace HEVS
         /// <summary>
         /// Access to the primary camera used to output the captured display.
         /// </summary>
-        public UnityEngine.Camera primaryOutputCamera { get { return outputCameras[0]; } }
+        public UnityEngine.Camera primaryOutputCamera => outputCameras[0];
 
         #region Config Helpers
         /// <summary>
         /// The type of display, as a string. Can be user defined using the CustomDisplayAttribute.
         /// </summary>
-        public string type { get { return config.type; } }
+        public string type => config.type;
 
         /// <summary>
         /// The ID of the display.
         /// </summary>
-        public string id { get { return config.id; } }
+        public string id => config.id;
 
         /// <summary>
         /// Access to the display's viewport config, or null if no custom viewport is set.
         /// </summary>
-        public Config.Viewport viewport { get { return config.viewport; } }
+        public Config.Viewport viewport => config.viewport;
 
         /// <summary>
         /// A 3D integer-based "index" for the display. This is entirely user-defined and can be used to identifying displays within a grid layout.
         /// </summary>
-        public Vector3Int index { get { return config.index; } }
+        public Vector3Int index => config.index;
 
         /// <summary>
         /// The layermask for the display's cameras.
         /// </summary>
-        public LayerMask layerMask { get { return config.layerMask; } }
+        public LayerMask layerMask => config.layerMask;
 
         /// <summary>
         /// An optional transform that is applied to the display's cameras and GameObjects when it is initialised.
         /// </summary>
-        public Config.Transform transform { get { return config.transform; } }
+        public Config.Transform transform => config.transform;
 
         /// <summary>
         /// The Field-of-View for the display.
         /// </summary>
-        public float fov { get { return config.fov; } }
+        public float fov => config.fov;
 
         /// <summary>
         /// The aspect scale for the display. This is useful for displays that use a single projector/screen for multiple displays (or stereoscopic) and need to adjust the aspect to combat squashed aspects.
         /// </summary>
-        public float aspectScale { get { return config.aspectScale; } }
+        public float aspectScale => config.aspectScale;
 
         #region Stereo Config Wrappers
         /// <summary>
@@ -166,31 +166,31 @@ namespace HEVS
         /// <summary>
         /// The current platform's StereoConfig object.
         /// </summary>
-        public Config.Stereo stereoConfig { get { return config.stereoConfig; } }
+        public Config.Stereo stereoConfig => config.stereoConfig;
 
         /// <summary>
         /// The display adapter (connected output monitor/projector) that this display outputs to.
         /// </summary>
-        public int monitor { get { return config.monitor; } }
+        public int monitor => config.monitor;
 
         /// <summary>
         /// The near plane distance that will be used for the cameras this display requires. Default = -1 (use the values from the Unity scene instead)
         /// </summary>
-        public float nearClip { get { return config.nearClip; } }
+        public float nearClip => config.nearClip;
 
         /// <summary>
         /// The far plane distance that will be used for the cameras this display requires. Default = -1 (use the values from the Unity scene instead)
         /// </summary>
-        public float farClip { get { return config.farClip; } }
+        public float farClip => config.farClip;
         /// <summary>
         /// When using custom warp you can specify the location of the warp data that the projectors will use.
         /// </summary>
-        public string warpPath { get { return config.warpPath; } }
+        public string warpPath => config.warpPath;
 
         /// <summary>
         /// When using custom projector blending you can specify the location of the blend information that the projectors will use.
         /// </summary>
-        public string blendPath { get { return config.blendPath; } }
+        public string blendPath => config.blendPath;
         #endregion
 
         /// <summary>
@@ -245,8 +245,14 @@ namespace HEVS
             {
                 this.gameObject = new GameObject(config.id);
                 this.gameObject.transform.SetParent(Camera.main.transform, false);
-                this.gameObject.transform.localPosition = config.transform.translate;
-                this.gameObject.transform.localRotation = config.transform.rotate;
+            }
+            
+            if (config.transform != null)
+            {
+                if (config.transform.HasTranslation)
+                    this.gameObject.transform.localPosition = config.transform.Translation;
+                if (config.transform.HasRotation)
+                    this.gameObject.transform.localRotation = config.transform.Rotation;
             }
 
             ConfigureDisplayForScene();

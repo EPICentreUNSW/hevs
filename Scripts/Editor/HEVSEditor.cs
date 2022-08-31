@@ -14,6 +14,15 @@ namespace HEVS
             EditorUtilityExtenion.CreateLayer("HEVSRightEyeOnly");
             EditorUtilityExtenion.CreateLayer("HEVSFullscreenOverlay");
 
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor0");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor1");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor2");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor3");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor4");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor5");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor6");
+            EditorUtilityExtenion.CreateLayer("HEVSMonitor7");
+
             // add the required shaders
             EditorCoroutine.Start(EditorUtilityExtenion.AddAlwaysIncludedShader("Unlit/Texture"));
             EditorCoroutine.Start(EditorUtilityExtenion.AddAlwaysIncludedShader("HEVS/CameraOverlay"));

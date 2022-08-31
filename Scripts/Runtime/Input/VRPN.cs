@@ -44,11 +44,6 @@ namespace HEVS
             Quaternion rotation { get; }
 
             /// <summary>
-            /// The stored position and orientation of the device.
-            /// </summary>
-            Config.Transform transform { get; }
-
-            /// <summary>
             /// Check a button state on the device.
             /// </summary>
             /// <param name="button">The button to check.</param>
@@ -295,23 +290,23 @@ namespace HEVS
                 address = name + "@" + host;
             }
 
-            Config.Transform _transform = new Config.Transform();
-
             int _trackerFrame = -1;
+
+            Vector3 _position = Vector3.zero;
+            Quaternion _rotation = Quaternion.identity;
 
             public string name { get; private set; }
             public string host { get; private set; }
             public string address { get; private set; }
-            
-            public virtual Vector3 position             { get { return _transform.translate; } }
-            public virtual Quaternion rotation          { get { return _transform.rotate; } }
-            public virtual Config.Transform transform   { get { return _transform; } }
+
+            public virtual Vector3 position => _position;
+            public virtual Quaternion rotation => _rotation;
 
             public void UpdateState(int frame)
             {
                 if (frame > _trackerFrame)
                 {
-                    GetTrackerState(address, ref _transform.translate, ref _transform.rotate, frame);
+                    GetTrackerState(address, ref _position, ref _rotation, frame);
                     _trackerFrame = frame;
                 }
             }

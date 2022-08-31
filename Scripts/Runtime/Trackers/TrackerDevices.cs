@@ -81,6 +81,9 @@ namespace HEVS.Trackers
     [CustomTracker("xr")]
     public class XRTrackerDevice : TrackerDevice
     {
+        Filter.OneEuroFilterVector3 tFilter;
+        Filter.OneEuroFilterQuaternion rFilter;
+
         /// <summary>
         /// Create the tracker device.
         /// </summary>
@@ -95,6 +98,12 @@ namespace HEVS.Trackers
         /// <returns>Returns true if the device is successfully initialised.</returns>
         public override bool Initialise()
         {
+            if (owner.smoothing && IsNodeValid())
+            {
+                (var position, var rotation) = GetTrackerState();
+                tFilter = new Filter.OneEuroFilterVector3(position, 1, 0.007f, 1);
+                rFilter = new Filter.OneEuroFilterQuaternion(rotation, 1, 0.007f, 1);
+            }
             return true;
         }
 
@@ -104,6 +113,35 @@ namespace HEVS.Trackers
         public override void Release()
         {
 
+        }
+
+        bool IsNodeValid()
+        {
+            List<XRNodeState> nodes = new List<XRNodeState>();
+            InputTracking.GetNodeStates(nodes);
+
+            return nodes.Exists(s => s.nodeType == owner.xrNode);
+        }
+
+        (Vector3 position, Quaternion rotation) GetTrackerState()
+        {
+            List<XRNodeState> nodes = new List<XRNodeState>();
+            InputTracking.GetNodeStates(nodes);
+
+            if (nodes.Exists(s => s.nodeType == owner.xrNode))
+            {
+                var state = nodes.Find(s => s.nodeType == owner.xrNode);
+
+                Vector3 position = Vector3.zero;
+                Quaternion rotation = Quaternion.identity;
+
+                state.TryGetPosition(out position);
+                state.TryGetRotation(out rotation);
+
+                return (position, rotation);
+            }
+
+            return (Vector3.zero, Quaternion.identity);
         }
 
         /// <summary>
@@ -124,9 +162,6 @@ namespace HEVS.Trackers
                 state.TryGetPosition(out position);
                 state.TryGetRotation(out rotation);
 
-                Transform relativePositionTransform = SceneOrigin.gameObject.transform;
-                Transform relativeRotationTransform = SceneOrigin.gameObject.transform;
-
                 if (XRSettings.loadedDeviceName == "Oculus")
                 {
                     var headState = nodes.Find(s => s.nodeType == XRNode.Head);
@@ -136,26 +171,33 @@ namespace HEVS.Trackers
                     Vector3 nodeDirection = position - headPosition;
 
                     Transform cameraTransform = HEVS.Camera.main.transform;
-                    position = cameraTransform.position + relativePositionTransform.TransformDirection(nodeDirection);
-                    rotation = relativeRotationTransform.rotation * rotation;
+                    position = cameraTransform.position + SceneOrigin.gameObject.transform.TransformDirection(nodeDirection);
+                    rotation = SceneOrigin.gameObject.transform.rotation * rotation;
                 }
                 else
                 {
-                    position = relativePositionTransform.TransformPoint(position);
-                    rotation = relativeRotationTransform.rotation * rotation;
+                    position = SceneOrigin.gameObject.transform.TransformPoint(position);
+                    rotation = SceneOrigin.gameObject.transform.rotation * rotation;
                 }
 
-                Config.Transform td = new Config.Transform();
-                td.translate = position;
-                td.rotate = rotation;
-                td.scale = Vector3.one;
+                Config.Transform td = new Config.Transform(position, rotation, Vector3.one);
                 td = owner.offsetTransform.PostConcatenate(td);
 
                 if ((owner.transformFlags & (int)TransformFlags.Position) != 0)
-                    owner.transform.position = td.translate;// position;
+                {
+                    if (owner.smoothing)
+                        owner.transform.localPosition = tFilter.Filter(td.Translation, Time.deltaTime);
+                    else
+                        owner.transform.localPosition = td.Translation;
+                }
 
                 if ((owner.transformFlags & (int)TransformFlags.Rotation) != 0)
-                    owner.transform.rotation = td.rotate; // rotation;
+                {
+                    if (owner.smoothing)
+                        owner.transform.localRotation = rFilter.Filter(td.Rotation, Time.deltaTime);
+                    else
+                        owner.transform.localRotation = td.Rotation;
+                }
             }
         }
     }
@@ -284,34 +326,23 @@ namespace HEVS.Trackers
                         r.w = tracker.rotation.w;
                 }
 
-                Config.Transform td = new Config.Transform();
-                td.translate = p;
-                td.rotate = r;
-                td.scale = Vector3.one;
+                Config.Transform td = new Config.Transform(p,r,Vector3.one);
                 td = owner.offsetTransform.Concatenate(td);
 
                 if ((owner.transformFlags & (int)TransformFlags.Position) != 0)
                 {
                     if (owner.smoothing)
-                    {
-                        owner.transform.localPosition = tFilter.Filter(td.translate, Time.deltaTime);
-                        //    float distance = Vector3.Distance(owner.transform.localPosition, td.translate) * owner.smoothMultiplier;
-                        //   owner.transform.localPosition = Vector3.MoveTowards(owner.transform.localPosition, td.translate, distance * distance * Time.deltaTime);
-                    }
+                        owner.transform.localPosition = tFilter.Filter(td.Translation, Time.deltaTime);
                     else
-                        owner.transform.localPosition = td.translate;
+                        owner.transform.localPosition = td.Translation;
                 }
 
                 if ((owner.transformFlags & (int)TransformFlags.Rotation) != 0)
                 {
                     if (owner.smoothing)
-                    {
-                        owner.transform.localRotation = rFilter.Filter(td.rotate, Time.deltaTime);
-                        //   float angle = Quaternion.Angle(owner.transform.localRotation, td.rotate) / 360 * owner.smoothMultiplier;
-                        //    owner.transform.localRotation = Quaternion.RotateTowards(owner.transform.localRotation, td.rotate, angle * angle * 360);
-                    }
+                        owner.transform.localRotation = rFilter.Filter(td.Rotation, Time.deltaTime);
                     else
-                        owner.transform.localRotation = td.rotate;
+                        owner.transform.localRotation = td.Rotation;
                 }
             }
         }
@@ -582,9 +613,12 @@ namespace HEVS.Trackers
                     case TrackerAxis.NEG_Z: s.z = -scale.z; break;
                 }
 
-                s.x *= owner.offsetTransform.scale.x;
-                s.y *= owner.offsetTransform.scale.y;
-                s.z *= owner.offsetTransform.scale.z;
+                if (owner.offsetTransform.HasScale)
+                {
+                    s.x *= owner.offsetTransform.Scale.x;
+                    s.y *= owner.offsetTransform.Scale.y;
+                    s.z *= owner.offsetTransform.Scale.z;
+                }
 
                 owner.transform.localScale = s;
             }

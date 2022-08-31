@@ -216,16 +216,25 @@ namespace HEVS
 
             if (isCluster)
             {
+                if (Core.VerboseLogging) Debug.Log("HEVS: Initialising sockets...");
+
                 InitialiseSockets(randomSeed);
 
+                if (Core.VerboseLogging) Debug.Log("HEVS: Enabling data broadcasting if required.");
                 if (enableDataBroadcast)
                     InitialiseDataBroadcasting();
 
                 // disable vsync unless requested
                 if (Environment.GetCommandLineArgs().Contains("-vsynced"))
+                {
+                    if (Core.VerboseLogging) Debug.Log("HEVS: Enabling vsync.");
                     QualitySettings.vSyncCount = 1;
+                }
                 else
+                {
+                    if (Core.VerboseLogging) Debug.Log("HEVS: Disabling vsync.");
                     QualitySettings.vSyncCount = 0;
+                }
 
                 // hide cursor
                 if (!isMaster)
@@ -274,16 +283,19 @@ namespace HEVS
             // open sockets
             AsyncIO.ForceDotNet.Force();
 
+            if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Creating read/write buffers.");
             payloadWriter = new ByteBufferWriter(config.packetLimit);
             payloadReader = new ByteBufferReader();
 
             if (isMaster)
             {
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Binding publisher socket tcp://*:{config.dataPort}");
                 // create PUB socket
                 dataSocket = new PublisherSocket();
                 dataSocket.Options.SendBuffer = config.packetLimit;
                 dataSocket.Bind("tcp://*:" + config.dataPort);
 
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Binding response socket tcp://*:{config.syncPort}");
                 // create REP socket
                 syncSocket = new ResponseSocket();
                 syncSocket.Options.SendBuffer = config.packetLimit;
@@ -291,12 +303,15 @@ namespace HEVS
             }
             else
             {
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Subscribing to master tcp://{config.master.address}:{config.dataPort}");
                 // create SUB socket
                 dataSocket = new SubscriberSocket();
                 dataSocket.Options.ReceiveBuffer = config.packetLimit;
 
                 dataSocket.Connect("tcp://" + config.master.address + ":" + config.dataPort);
                 (dataSocket as SubscriberSocket).SubscribeToAnyTopic();
+
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Connecting request socket to master tcp://{config.master.address}:{config.syncPort}");
 
                 // create REQ socket
                 syncSocket = new RequestSocket();
@@ -310,8 +325,12 @@ namespace HEVS
                 syncSocket.Connect("tcp://" + config.master.address + ":" + config.syncPort);
             }
 
-        //    networkConnected = true;
+            //    networkConnected = true;
+            if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Startup barrier...");
+
             StartupBarrier(randomSeed);
+
+            if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::InitialiseSockets(): Complete.");
         }
 
         static void StartupBarrier(int randomSeed)
@@ -322,12 +341,16 @@ namespace HEVS
 
                 TimeSpan ts = new TimeSpan(0, 0, 0, config.clientTimeoutLimit);
 
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): Waiting for {remainingConnections} clients...");
+
                 // wait for all connected
                 while ((remainingConnections - clientDropoutCount) > 0)
                 {
                     // wait for connection signal
                     if (syncSocket.TrySkipFrame(ts))
                     {
+                        if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): Client connected, {remainingConnections} remaining.");
+
                         // reply with random seed
                         syncSocket.SendFrame(randomSeed.ToString());
                         remainingConnections--;
@@ -339,17 +362,24 @@ namespace HEVS
                     }
                 }
 
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): All connected, sending OK.");
+
                 // if all connected, send ready
                 dataSocket.SignalOK();
             }
             else
             {
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): Signalling ready.");
+
                 // send connection signal
                 syncSocket.SignalOK();
 
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): Waiting for acknowledgement.");
                 // receive random seed
                 string randomSeedString = syncSocket.ReceiveFrameString();
                 UnityEngine.Random.InitState(Convert.ToInt32(randomSeedString));
+
+                if (Core.VerboseLogging) Debug.Log($"HEVS Cluster::StartupBarrier(): Acknowledgement received, waiting for OK signal that whole cluster is connected.");
 
                 // wait until "server ready"
                 dataSocket.SkipFrame();

@@ -136,8 +136,16 @@ namespace HEVS
         /// <returns>Returns true if the world-space ray intersects the display, otherwise it returns false.</returns>
         public override bool Raycast(Ray ray, out float distance, out Vector2 hitPoint2D)
         {
-            var sp = SceneOrigin.position + SceneOrigin.rotation * config.transform.translate;
-            var sr = SceneOrigin.rotation * config.transform.rotate;
+            var sp = SceneOrigin.position;
+            var sr = SceneOrigin.rotation;
+
+            if (config.transform != null)
+            {
+                if (config.transform.HasTranslation)
+                    sp += SceneOrigin.rotation * config.transform.Translation;
+                if (config.transform.HasRotation)
+                    sr *= config.transform.Rotation;
+            }
 
             Plane plane = new Plane(sr * facing, sr * ll + sp);
 
@@ -202,8 +210,16 @@ namespace HEVS
         /// <param name="config">The config data to use for drawing a gizmo of this type.</param>
         public static void DrawGizmo(Config.Display config)
         {
-            var sp = SceneOrigin.position + SceneOrigin.rotation * config.transform.translate;
-            var sr = SceneOrigin.rotation * config.transform.rotate;
+            var sp = SceneOrigin.position;
+            var sr = SceneOrigin.rotation;
+
+            if (config.transform != null)
+            {
+                if (config.transform.HasTranslation)
+                    sp += SceneOrigin.rotation * config.transform.Translation;
+                if (config.transform.HasRotation)
+                    sr *= config.transform.Rotation;
+            }
 
             Vector3 ul = Vector3.zero;
             Vector3 ll = Vector3.zero;

@@ -39,8 +39,16 @@ namespace HEVS
             Vector3 lr = new Vector3(s2, 0, c2);
 
             // orientate slice
-            Vector3 offset = Vector3.up * curvedDisplay.groundOffset + SceneOrigin.position + SceneOrigin.rotation * display.config.transform.translate;
-            Quaternion orientation = SceneOrigin.rotation * display.config.transform.rotate;
+            Vector3 offset = Vector3.up * curvedDisplay.groundOffset + SceneOrigin.position;
+            Quaternion orientation = SceneOrigin.rotation;
+
+            if (display.config.transform != null)
+            {
+                if (display.config.transform.HasTranslation)
+                    offset += SceneOrigin.rotation * display.config.transform.Translation;
+                if (display.config.transform.HasRotation)
+                    orientation *= display.config.transform.Rotation;
+            }
 
             Vector3 ul = ll + Vector3.up * curvedDisplay.height;
 

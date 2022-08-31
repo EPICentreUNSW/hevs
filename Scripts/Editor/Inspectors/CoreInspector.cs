@@ -105,7 +105,7 @@ namespace HEVS
 
         SerializedProperty includeConsole;
 
-        bool oscFoldout = false;
+    //    bool oscFoldout = false;
         SerializedProperty oscPort;
         SerializedProperty includeOSC;
     //    SerializedProperty oscReceivers;

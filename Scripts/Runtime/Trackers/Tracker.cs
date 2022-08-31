@@ -171,7 +171,7 @@ namespace HEVS
         /// <summary>
         /// Specifies an optional transform to apply to the received tracker transform before applying it to the Unity GameObject's Transform.
         /// </summary>
-        public Config.Transform offsetTransform { get { return _offsetTransform; } set { _offsetTransform = value; } }
+        public Config.Transform offsetTransform => _offsetTransform;// { get { return _offsetTransform; } set { _offsetTransform = value; } }
         [SerializeField]
         Config.Transform _offsetTransform = Config.Transform.identity;
 
@@ -219,7 +219,7 @@ namespace HEVS
             this.config = config;
 
             if (config != null)
-                this._offsetTransform = config.offsetTransform;
+                this._offsetTransform = config.transform;
 
             device = CreateDevice((Application.isEditor && forceMouseInEditor) ? "Mouse" : (config != null ? config.type : defaultType.ToString()), this);
 

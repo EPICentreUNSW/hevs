@@ -188,8 +188,17 @@ namespace HEVS
                 // attempt to intersect with displays
                 foreach (Display display in Core.platformDisplays)
                 {
-                    var sp = sceneOrigin + sceneOrientation * display.config.transform.translate;
-                    var sr = sceneOrientation * display.config.transform.rotate;
+                    var sp = sceneOrigin;
+                    var sr = sceneOrientation;
+
+                    if (display.config.transform != null)
+                    {
+                        if (display.config.transform.HasTranslation)
+                            sp += sceneOrientation * display.config.transform.Translation;
+
+                        if (display.config.transform.HasRotation)
+                            sr *= display.config.transform.Rotation;
+                    }
 
                     float d = float.MaxValue;
                     Vector2 hitPos2D = Vector2.zero;

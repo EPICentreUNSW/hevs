@@ -148,7 +148,7 @@ namespace HEVS
             /// <summary>
             /// A transform to apply on top of a tracker. This can help reorientate tracker spaces between platforms.
             /// </summary>
-            public Transform offsetTransform = Transform.identity;
+            public Transform transform = Transform.identity;
 
             /// <summary>
             /// The SimpleJSON JSON data used to create this tracker.
@@ -187,7 +187,7 @@ namespace HEVS
                     if (json["transform"].Tag == SimpleJSON.JSONNodeType.String)
                     {
                         //     offsetTransform = transforms.Find(t => t.id.Equals(json["transform"], StringComparison.OrdinalIgnoreCase));
-                        if (!transforms.TryGetValue(json["transform"], out offsetTransform))
+                        if (!transforms.TryGetValue(json["transform"], out transform))
                         {
                             Debug.LogError("HEVS: Failed to find transform [" + json["transform"].Value + "] for tracker [" + id + "]");
                             return false;
@@ -196,7 +196,7 @@ namespace HEVS
                     else
                     {
                         // else parse the transform
-                        if (!offsetTransform.Parse(json["transform"]))
+                        if (!transform.Parse(json["transform"]))
                         {
                             Debug.LogError("HEVS: Failed to parse transform for tracker [" + id + "]");
                             return false;

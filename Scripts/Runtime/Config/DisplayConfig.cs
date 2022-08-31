@@ -12,6 +12,11 @@ namespace HEVS
         public class Display : IConfigObject
         {
             /// <summary>
+            /// The display this display inherits from.
+            /// </summary>
+            public Display inherited { get; private set; }
+
+            /// <summary>
             /// The ID of the display.
             /// </summary>
             public string id { get; private set; }
@@ -40,8 +45,7 @@ namespace HEVS
             /// <summary>
             /// An optional transform that is applied to the display's cameras and GameObjects when it is initialised.
             /// </summary>
-            public Transform transform { get { return _transform; } }
-            Transform _transform = Transform.identity;
+            public Transform transform;
 
             /// <summary>
             /// The Field-of-View for the display.
@@ -124,6 +128,22 @@ namespace HEVS
             public SimpleJSON.JSONNode json { get; private set; }
 
             /// <summary>
+            /// Queries the config json for a property, or an inherited config's property.
+            /// </summary>
+            /// <param name="property"></param>
+            /// <returns></returns>
+            public SimpleJSON.JSONNode GetProperty(string property)
+            {
+                if (json.Keys.Contains(property))
+                    return json[property];
+
+                if (inherited != null)
+                    return inherited.GetProperty(property);
+
+                return null;
+            }
+
+            /// <summary>
             /// Creates a standard display with optional StereoConfig data.
             /// </summary>
             /// <param name="id">The ID for the display.</param>
@@ -151,7 +171,10 @@ namespace HEVS
                     string base_id = json["inherit"];
                     Display baseConfig;
                     if (displays.TryGetValue(base_id, out baseConfig))
+                    {
+                        inherited = baseConfig;
                         Parse(baseConfig.json);
+                    }
                     else
                     {
                         Debug.LogError("HEVS: No inherited display [" + base_id + "] previously defined for display [" + id + "]!");
@@ -174,11 +197,11 @@ namespace HEVS
                 }
 
                 if (json.Keys.Contains("transform"))
-                {
+                {                    
                     // is it a string? if so, find transform in Platform's list
                     if (json["transform"].Tag == SimpleJSON.JSONNodeType.String)
                     {
-                        if (!transforms.TryGetValue(json["transform"], out _transform))
+                        if (!transforms.TryGetValue(json["transform"], out transform))
                         {
                             Debug.LogError("HEVS: Failed to find transform [" + json["transform"].Value + "] for display [" + id + "]");
                             return false;
@@ -187,6 +210,8 @@ namespace HEVS
                     else
                     {
                         // else parse the transform
+                        if (transform != null)
+                            transform = new Transform();
                         if (!transform.Parse(json["transform"]))
                         {
                             Debug.LogError("HEVS: Failed to parse transform for display [" + id + "]");
@@ -214,7 +239,11 @@ namespace HEVS
                     customEyeSeparation = json["eye_separation"].AsFloat;
 
                 if (json.Keys.Contains("transform"))
+                {
+                    if (transform == null)
+                        transform = new Transform();
                     transform.Parse(json["transform"]);
+                }
 
                 if (json.Keys.Contains("fov"))
                     fov = json["fov"].AsFloat;

@@ -41,34 +41,31 @@ namespace HEVS
 
         static IntPtr RenderEventFunc = IntPtr.Zero;
 
-        static bool nativePluginAvailable = true;
+        static bool nativePluginAvailable = false;
 
         internal static void Initialise()
         {
             try
             {
+                RegisterDebugCallback(new DebugCallback(DebugMethod));
+
                 RenderEventFunc = GetRenderEventFunc();
 
                 if (RenderEventFunc == null ||
                     RenderEventFunc == IntPtr.Zero)
-                    Debug.LogWarning("hevs.native: Couldn't access low-level native render callback. Is the native plugin missing?");
+                    Debug.LogWarning("hevs.native: Couldn't access low-level native render callback.");
+                else
+                    nativePluginAvailable = true;
             }
             catch (DllNotFoundException)
             {
-                nativePluginAvailable = false;
-                Debug.LogWarning("hevs.native: Couldn't access low-level native render callback. Is the native plugin missing?");
+                Debug.LogWarning("hevs.native: DllNotFoundException. Is the native plugin missing?");
             }
-
-            try
+            catch
             {
-                RegisterDebugCallback(new DebugCallback(DebugMethod));
+                Debug.LogWarning("hevs.native: Unknown exception caught during initialisation!");
             }
-            catch (DllNotFoundException)
-            {
-                nativePluginAvailable = false;
-                Debug.LogWarning("hevs.native: Couldn't register debug callback method. Is the native plugin missing?");
-            }
-        }
+}
 
 #region Debug Logging
         private delegate void DebugCallback(string message);

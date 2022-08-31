@@ -9,7 +9,7 @@ namespace HEVS
         /// A HEVS Transform config object.
         /// </summary>
         [Serializable]
-        public struct Transform : IConfigObject
+        public class Transform : IConfigObject
         {
             /// <summary>
             /// The ID of the transform.
@@ -19,22 +19,36 @@ namespace HEVS
             /// <summary>
             /// The translation component of the transform.
             /// </summary>
-            public Vector3 translate;
+            Vector3? _translate;
+
+            public bool HasTranslation => _translate.HasValue;
+
+            public Vector3 Translation => _translate.HasValue ? _translate.Value : Vector3.zero;
 
             /// <summary>
             /// The rotation component of the transform.
             /// </summary>
-            public Quaternion rotate;
+            Quaternion? _rotate;
+
+            public bool HasRotation => _rotate.HasValue;
+
+            public Quaternion Rotation => _rotate.HasValue ? _rotate.Value : Quaternion.identity;
 
             /// <summary>
             /// The scale component of the transform.
             /// </summary>
-            public Vector3 scale;
+            Vector3? _scale;
+
+            public bool HasScale => _scale.HasValue;
+
+            public Vector3 Scale => _scale.HasValue ? _scale.Value : Vector3.one;
 
             /// <summary>
             /// Convert this transform to a 4x4 Matrix.
             /// </summary>
-            public Matrix4x4 matrix { get { return Matrix4x4.TRS(translate, rotate, scale); } }
+            public Matrix4x4 matrix => Matrix4x4.TRS(_translate.HasValue ? _translate.Value : Vector3.zero, 
+                _rotate.HasValue ? _rotate.Value : Quaternion.identity, 
+                _scale.HasValue ? _scale.Value : Vector3.one); 
 
             /// <summary>
             /// Access to the SimpleJSON JSON used to create this transform.
@@ -48,9 +62,22 @@ namespace HEVS
             public Transform(string id = "unknown")
             {
                 this.id = id;
-                translate = Vector3.zero;
-                rotate = Quaternion.identity;
-                scale = Vector3.one;
+                json = null;
+            }
+
+            /// <summary>
+            /// Creates a TransformConfig from values with an optional ID.
+            /// </summary>
+            /// <param name="translation">Translation</param>
+            /// <param name="rotation">Rotation</param>
+            /// <param name="scale">Scale</param>
+            /// <param name="id">Optional ID to assign to this transform.</param>
+            public Transform(Vector3 translation, Quaternion rotation, Vector3 scale, string id = "unknown")
+            {
+                this.id = id;
+                _translate = translation;
+                _rotate = rotation;
+                _scale = scale;
                 json = null;
             }
 
@@ -61,9 +88,9 @@ namespace HEVS
             /// <returns>Returns the populated UnityEngine.Transform.</returns>
             public UnityEngine.Transform PopulateLocal(UnityEngine.Transform t)
             {
-                t.localPosition = translate;
-                t.localRotation = rotate;
-                t.localScale = scale;
+                t.localPosition = _translate.HasValue ? _translate.Value : Vector3.zero;
+                t.localRotation = _rotate.HasValue ? _rotate.Value : Quaternion.identity;
+                t.localScale = _scale.HasValue ? _scale.Value : Vector3.one;
                 return t;
             }
 
@@ -75,9 +102,9 @@ namespace HEVS
             /// <returns>Returns the populated UnityEngine.Transform.</returns>
             public UnityEngine.Transform PopulateGlobal(UnityEngine.Transform t)
             {
-                t.position = translate;
-                t.rotation = rotate;
-                t.localScale = scale;
+                t.position = _translate.HasValue ? _translate.Value : Vector3.zero;
+                t.rotation = _rotate.HasValue ? _rotate.Value : Quaternion.identity;
+                t.localScale = _scale.HasValue ? _scale.Value : Vector3.one;
                 return t;
             }
 
@@ -94,13 +121,13 @@ namespace HEVS
                     id = json["id"];
 
                 if (json.Keys.Contains("translate"))
-                    translate = new Vector3(json["translate"][0].AsFloat, json["translate"][1].AsFloat, json["translate"][2].AsFloat);
+                    _translate = new Vector3(json["translate"][0].AsFloat, json["translate"][1].AsFloat, json["translate"][2].AsFloat);
 
                 if (json.Keys.Contains("rotate"))
-                    rotate = Quaternion.Euler(json["rotate"][0].AsFloat, json["rotate"][1].AsFloat, json["rotate"][2].AsFloat);
+                    _rotate = Quaternion.Euler(json["rotate"][0].AsFloat, json["rotate"][1].AsFloat, json["rotate"][2].AsFloat);
 
                 if (json.Keys.Contains("scale"))
-                    scale = new Vector3(json["scale"][0].AsFloat, json["scale"][1].AsFloat, json["scale"][2].AsFloat);
+                    _scale = new Vector3(json["scale"][0].AsFloat, json["scale"][1].AsFloat, json["scale"][2].AsFloat);
 
                 return true;
             }
@@ -115,7 +142,7 @@ namespace HEVS
             /// </summary>
             public bool isIdentity
             {
-                get { return translate == Vector3.zero && rotate == Quaternion.identity && scale == Vector3.one; }
+                get { return Translation == Vector3.zero && Rotation == Quaternion.identity && Scale == Vector3.one; }
             }
 
             /// <summary>
@@ -127,8 +154,14 @@ namespace HEVS
             public Transform Concatenate(Vector3 position, Quaternion orientation)
             {
                 Transform td = new Transform();
-                td.translate = rotate * position + translate;
-                td.rotate = rotate * orientation;
+                if (HasRotation)
+                {
+                    td._translate = _rotate.Value * position;
+                    td._rotate = _rotate.Value * orientation;
+                }
+                if (HasTranslation)
+                    td._translate += _translate.Value;
+
                 return td;
             }
 
@@ -140,8 +173,14 @@ namespace HEVS
             public Transform Concatenate(Transform transform)
             {
                 Transform td = new Transform();
-                td.translate = rotate * transform.translate + translate;
-                td.rotate = rotate * transform.rotate;
+                if (HasRotation)
+                {
+                    td._translate = _rotate.Value * transform.Translation;
+                    td._rotate = _rotate.Value * transform.Rotation;
+                }
+                if (HasTranslation)
+                    td._translate += _translate.Value;
+
                 return td;
             }
 
@@ -153,8 +192,11 @@ namespace HEVS
             public Transform PostConcatenate(Transform transform)
             {
                 Transform td = new Transform();
-                td.translate = transform.rotate * translate + transform.translate;
-                td.rotate = transform.rotate * rotate;
+                if (HasRotation)
+                    td._rotate = transform.Rotation * _rotate.Value;
+                if (HasTranslation)
+                    td._translate = transform.Rotation * _translate.Value + transform.Translation;
+
                 return td;
             }
 
@@ -166,8 +208,13 @@ namespace HEVS
             public Transform Concatenate(UnityEngine.Transform transform)
             {
                 Transform td = new Transform();
-                td.translate = rotate * transform.position + translate;
-                td.rotate = rotate * transform.rotation;
+                if (HasRotation)
+                {
+                    td._translate = _rotate.Value * transform.position;
+                    td._rotate = _rotate.Value * transform.rotation;
+                }
+                if (HasTranslation)
+                    td._translate += _translate.Value;
                 return td;
             }
 
@@ -179,8 +226,10 @@ namespace HEVS
             public Transform PostConcatenate(UnityEngine.Transform transform)
             {
                 Transform td = new Transform();
-                td.translate = transform.rotation * translate + transform.position;
-                td.rotate = transform.rotation * rotate;
+                if (HasRotation)
+                    td._rotate = transform.rotation * _rotate.Value;
+                if (HasTranslation)
+                    td._translate += transform.rotation * _translate.Value + transform.position;
                 return td;
             }
 
@@ -191,7 +240,7 @@ namespace HEVS
             /// <returns>Returns the transformed point.</returns>
             public Vector3 TransformPoint(Vector3 point)
             {
-                return rotate * point + translate;
+                return Rotation * point + Translation;
             }
 
             /// <summary>
@@ -201,7 +250,7 @@ namespace HEVS
             /// <returns>Returns the transformed rotation.</returns>
             public Quaternion TransformRotation(Quaternion rotation)
             {
-                return rotate * rotation;
+                return Rotation * rotation;
             }
         }
     }

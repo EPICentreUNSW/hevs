@@ -18,8 +18,16 @@ namespace HEVS
 
             OffAxisDisplay offAxisDisplay = display as OffAxisDisplay;
 
-            Vector3 offset = SceneOrigin.position + SceneOrigin.rotation * display.transform.translate;
-            Quaternion orientation = SceneOrigin.rotation * display.transform.rotate;
+            Vector3 offset = SceneOrigin.position;
+            Quaternion orientation = SceneOrigin.rotation;
+
+            if (display.transform != null)
+            {
+                if (display.transform.HasTranslation)
+                    offset += SceneOrigin.rotation * display.transform.Translation;
+                if (display.transform.HasRotation)
+                    orientation *= display.transform.Rotation;
+            }
 
             // adjust view
             transform.rotation = orientation * offAxisDisplay.orientation;

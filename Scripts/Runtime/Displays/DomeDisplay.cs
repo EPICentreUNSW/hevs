@@ -61,6 +61,11 @@ namespace HEVS
         public int[] projectorIDs { get; private set; }
 
         /// <summary>
+        /// A list of monitors that each projector will output to.
+        /// </summary>
+        public int[] projectorMonitors { get; private set; }
+
+        /// <summary>
         /// The 2D layout of the projectors when using a single display to output to multiple pojectors.
         /// </summary>
         public Vector2Int layout { get; private set; } = Vector2Int.one;
@@ -70,39 +75,60 @@ namespace HEVS
         /// </summary>
         /// <param name="config">The config to create the display from.</param>
         public DomeDisplay(Config.Display config) : base(config) 
-        { 
+        {
             // required data
-            if (config.json.Keys.Contains("radius"))
-                radius = config.json["radius"].AsFloat;
+            var radiusConfig = config.GetProperty("radius");
+            if (radiusConfig != null)
+                radius = radiusConfig.AsFloat;
 
-            if (config.json.Keys.Contains("fisheye_resolution"))
-                fisheyeResolution = new Vector2Int(config.json["fisheye_resolution"][0].AsInt, config.json["fisheye_resolution"][1].AsInt);
+            var fisheyeResolutionConfig = config.GetProperty("fisheye_resolution");
+            if (fisheyeResolutionConfig != null)
+                fisheyeResolution = new Vector2Int(fisheyeResolutionConfig[0].AsInt, fisheyeResolutionConfig[1].AsInt);
 
             // optional data
-            if (config.json.Keys.Contains("projectors"))
+            var projectorIDsConfig = config.GetProperty("projectors");
+            if (projectorIDsConfig != null)
             {
-                projectorIDs = new int[config.json["projectors"].Count];
-                for (int i = 0; i < projectorIDs.Length; ++i)
-                    projectorIDs[i] = config.json["projectors"][i].AsInt;
+                projectorCount = projectorIDsConfig.Count;
+                projectorIDs = new int[projectorCount];
+                for (int i = 0; i < projectorCount; ++i)
+                    projectorIDs[i] = projectorIDsConfig[i].AsInt;
+            }
+            else
+            {
+                var projectorCountConfig = config.GetProperty("projector_count");
+                if (projectorCountConfig)
+                    projectorCount = projectorCountConfig.AsInt;
             }
 
-            if (config.json.Keys.Contains("warp_mesh_path"))
-                warpMeshPath = config.json["warp_mesh_path"];
+            var projectorMonitorsConfig = config.GetProperty("projector_monitors");
+            if (projectorMonitorsConfig != null)
+            {
+                projectorMonitors = new int[projectorMonitorsConfig.Count];
+                for (int i = 0; i < projectorMonitors.Length; ++i)
+                    projectorMonitors[i] = projectorMonitorsConfig[i].AsInt;
+            }
 
-            if (config.json.Keys.Contains("projector_count"))
-                projectorCount = config.json["projector_count"].AsInt;
+            var warpMeshPathConfig = config.GetProperty("warp_mesh_path");
+            if (warpMeshPathConfig != null)
+                warpMeshPath = warpMeshPathConfig;
 
-            if (config.json.Keys.Contains("layout"))
-                layout = new Vector2Int(config.json["layout"][0].AsInt, config.json["layout"][1].AsInt);
 
-            if (config.json.Keys.Contains("vioso_path"))
-                viosoPath = config.json["vioso_path"];
+            var layoutConfig = config.GetProperty("layout");
+            if (layoutConfig != null)
+                layout = new Vector2Int(layoutConfig[0].AsInt, layoutConfig[1].AsInt);
 
-            if (config.json.Keys.Contains("smooth_border"))
-                smoothBorder = config.json["smooth_border"].AsBool;
+            var viosoConfig = config.GetProperty("vioso_path");
+            if (viosoConfig != null)
+                viosoPath = viosoConfig;
 
-            if (config.json.Keys.Contains("border_percent"))
-                borderPercent = config.json["border_percent"].AsFloat;
+            var smoothConfig = config.GetProperty("smooth_border");
+            if (smoothConfig != null)
+                smoothBorder = smoothConfig.AsBool;
+
+            var borderConfig = config.GetProperty("border_percent");
+            if (borderConfig != null)
+                borderPercent = borderConfig.AsFloat;
 
             // if multiple projectors then a warp directory must be set
             if (projectorCount > 1 &&
@@ -127,7 +153,17 @@ namespace HEVS
         public override void ConfigureDisplayForScene()
         {
             int fisheyeLayerMask = LayerMask.GetMask("HEVSCameras");
-            int fisheyeLayer = LayerMask.NameToLayer("HEVSCameras");
+            int hevsCaptureCameraMask = LayerMask.GetMask(new string[]{
+                "HEVSFullscreenOverlay",
+                "HEVSMonitor0", 
+                "HEVSMonitor1",
+                "HEVSMonitor2",
+                "HEVSMonitor3",
+                "HEVSMonitor4",
+                "HEVSMonitor5",
+                "HEVSMonitor6",
+                "HEVSMonitor7"
+            });
 
             // setup capture cameras - for now no stereo
             captureCameras.Clear();
@@ -147,7 +183,7 @@ namespace HEVS
                 camera.allowHDR = false;
                 camera.backgroundColor = original.backgroundColor;
                 camera.clearFlags = original.clearFlags;
-                camera.cullingMask = config.layerMask & ~fisheyeLayerMask;
+                camera.cullingMask = config.layerMask & ~fisheyeLayerMask & ~hevsCaptureCameraMask;
 
                 // create render target using half of the fisheye texture resolution
                 camera.targetTexture = new RenderTexture(fisheyeResolution.x / 2, fisheyeResolution.y / 2, 24, RenderTextureFormat.Default);
@@ -195,38 +231,68 @@ namespace HEVS
             );
 
             // are we using custom warp/blend for multiple projectors?
-            if (projectorCount > 1)
+            if (projectorCount > 1 ||
+                (projectorIDs != null && projectorIDs.Length > 0))
             {
                 fisheyeCamera.targetTexture = new RenderTexture(fisheyeResolution.x,
                                                                 fisheyeResolution.y,
                                                                 24, RenderTextureFormat.Default);
                 fisheyeCamera.targetTexture.wrapMode = TextureWrapMode.Clamp;
 
-                GameObject domeSlices = new GameObject(config.id + "_slices");
-                domeSlices.transform.SetParent(gameObject.transform, false);
-                domeSlices.transform.localPosition = new Vector3(5, 0, 0);
+                int projectorOutputMask = LayerMask.GetMask("HEVSMonitor" + config.monitor);
+                int projectorMonitorLayer = LayerMask.NameToLayer("HEVSMonitor" + config.monitor);
 
-                UnityEngine.Camera domeCam = domeSlices.AddComponent<UnityEngine.Camera>();
-                domeCam.nearClipPlane = 0.1f;
-                domeCam.farClipPlane = 1;
-                domeCam.orthographic = true;
-                domeCam.orthographicSize = 1;
-                domeCam.cullingMask = fisheyeLayerMask;
-                domeCam.allowHDR = false;
-                domeCam.useOcclusionCulling = false;
+                GameObject domeSlices = null;
 
-                domeCam.SetAndActivateTargetDisplay(config.monitor);
+                if (projectorMonitors == null)
+                {
+                    domeSlices = new GameObject(config.id + "_slices");
+                    domeSlices.transform.SetParent(gameObject.transform, false);
+                    domeSlices.transform.localPosition = new Vector3(5, 0, 0);
 
-                float screenAspect = Screen.width / (float)Screen.height * 0.5f;
+                    UnityEngine.Camera domeCam = domeSlices.AddComponent<UnityEngine.Camera>();
+                    domeCam.nearClipPlane = 0.1f;
+                    domeCam.farClipPlane = 1;
+                    domeCam.orthographic = true;
+                    domeCam.orthographicSize = 1;
+                    domeCam.cullingMask = projectorOutputMask;//fisheyeLayerMask;
+                    domeCam.allowHDR = false;
+                    domeCam.useOcclusionCulling = false;
+
+                    domeCam.SetAndActivateTargetDisplay(config.monitor);
+                }
+
+                float screenAspect = Screen.width / (float)Screen.height;// * 0.5f;
 
                 // this should move into the camera extension
                 for (int i = 0; i < projectorCount; ++i)
                 {
                     int projector = projectorIDs == null ? i : projectorIDs[i];
 
+                    if (projectorMonitors != null)
+                    {
+                        projectorOutputMask = LayerMask.GetMask("HEVSMonitor" + projectorMonitors[i]);
+                        projectorMonitorLayer = LayerMask.NameToLayer("HEVSMonitor" + projectorMonitors[i]);
+
+                        domeSlices = new GameObject(config.id + "_slices_monitor_" + projectorMonitors[i]);
+                        domeSlices.transform.SetParent(gameObject.transform, false);
+                        domeSlices.transform.localPosition = new Vector3(5, 0, 0);
+
+                        UnityEngine.Camera domeCam = domeSlices.AddComponent<UnityEngine.Camera>();
+                        domeCam.nearClipPlane = 0.1f;
+                        domeCam.farClipPlane = 1;
+                        domeCam.orthographic = true;
+                        domeCam.orthographicSize = 0.5f;
+                        domeCam.cullingMask = projectorOutputMask;//fisheyeLayerMask;
+                        domeCam.allowHDR = false;
+                        domeCam.useOcclusionCulling = false;
+
+                        domeCam.SetAndActivateTargetDisplay(projectorMonitors[i]);
+                    }
+
                     GameObject slice = new GameObject(config.id + "_slice_" + projector);
                     slice.transform.SetParent(domeSlices.transform, false);
-                    slice.layer = fisheyeLayer;
+                    slice.layer = projectorMonitorLayer;//fisheyeLayer;
 
                     // attach mesh
                     MeshFilter filter = slice.AddComponent<MeshFilter>();
@@ -245,16 +311,19 @@ namespace HEVS
                     renderer.material.SetTextureScale("_BlendTex", new Vector2(1.0f / (config.aspectScale * screenAspect), -1f));
                     renderer.material.SetTextureOffset("_BlendTex", new Vector2(0.5f, 0.5f));
 
-                    // calculate panel's layout position
-                    // which panel are we?
-                    int x = i % layout.x;
-                    int y = i / layout.x;
-
-                    // starting corner
-                    float xOffset = -config.aspectScale * screenAspect * layout.x * 0.5f + config.aspectScale * screenAspect * 0.5f;
-                    float yOffset = layout.y * 0.5f - 0.5f;
-
-                    slice.transform.localPosition = new Vector3(xOffset + x * config.aspectScale * screenAspect, yOffset - y, 0.5f);
+                    // offset panel if it uses a single output for multiple panels (i.e. mosaic)
+                    if (projectorMonitors == null)
+                    {
+                        // calculate panel's layout position
+                        // which panel are we?
+                        int x = i % layout.x;
+                        int y = i / layout.x;
+                        float xOffset = -config.aspectScale * screenAspect * layout.x * 0.5f + config.aspectScale * screenAspect * 0.5f;
+                        float yOffset = layout.y * 0.5f - 0.5f;
+                        slice.transform.localPosition = new Vector3(xOffset + x * config.aspectScale * screenAspect, yOffset - y, 0.5f);
+                    }
+                    else
+                        slice.transform.localPosition = new Vector3(0, 0, 0.5f);
                     slice.transform.localRotation = Quaternion.Euler(180, 0, 0);
                 }
             }
@@ -319,8 +388,16 @@ namespace HEVS
         /// <returns>Returns true if the world-space ray intersects the display, otherwise it returns false.</returns>
         public override bool Raycast(Ray ray, out float distance, out Vector2 hitPoint2D)
         {
-            var sp = SceneOrigin.position + SceneOrigin.rotation * config.transform.translate;
-            var sr = SceneOrigin.rotation * config.transform.rotate;
+            var sp = SceneOrigin.position;
+            var sr = SceneOrigin.rotation;
+
+            if (config.transform != null)
+            {
+                if (config.transform.HasTranslation)
+                    sp +=SceneOrigin.rotation * config.transform.Translation;
+                if (config.transform.HasRotation)
+                    sr *= config.transform.Rotation;
+            }
 
             Vector3[] p = Intersection.RaySphereIntersection(ray, sp, radius);
             if (p != null)
@@ -380,8 +457,8 @@ namespace HEVS
                 // NOPE NOPE NOPE
                 var td = config.transform.PostConcatenate(UnityEngine.Camera.main ? UnityEngine.Camera.main.transform : Camera.main.transform);
 
-                v1 = td.rotate * v1 + td.translate;
-                v2 = td.rotate * v2 + td.translate;
+                v1 = td.Rotation * v1 + td.Translation;
+                v2 = td.Rotation * v2 + td.Translation;
 
                 Gizmos.DrawLine(v1, v2);
 
@@ -399,8 +476,8 @@ namespace HEVS
                     v1 = new Vector3(x * c1, z * c1, y);
                     v2 = new Vector3(x * c2, z * c2, y2);
 
-                    v1 = td.rotate * v1 + td.translate;
-                    v2 = td.rotate * v2 + td.translate;
+                    v1 = td.Rotation * v1 + td.Translation;
+                    v2 = td.Rotation * v2 + td.Translation;
 
                     Gizmos.DrawLine(v1, v2);
                 }

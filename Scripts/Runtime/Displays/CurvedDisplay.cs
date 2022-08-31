@@ -486,8 +486,14 @@ namespace HEVS
         /// <returns>Returns true if the world-space ray intersects the display, otherwise it returns false.</returns>
         public override bool Raycast(Ray ray, out float distance, out Vector2 hitPoint2D)
         {
-            var sp = SceneOrigin.position + SceneOrigin.rotation * config.transform.translate;
-            var sr = SceneOrigin.rotation * config.transform.rotate;
+            var sp = SceneOrigin.position;
+            var sr = SceneOrigin.rotation;
+
+            if (config.transform != null)
+            {
+                sp += SceneOrigin.rotation * config.transform.Translation;
+                sr *= config.transform.Rotation;
+            }
 
             // intersect a ray with a cylinder
             Vector3[] p = Intersection.RayCylinderIntersection(ray, sp, sp + Vector3.up * height, radius);
@@ -526,8 +532,16 @@ namespace HEVS
         {
             var highlight = Gizmos.color;
 
-            var sp = SceneOrigin.position + SceneOrigin.rotation * config.transform.translate;
-            var sr = SceneOrigin.rotation * config.transform.rotate;
+            var sp = SceneOrigin.position;
+            var sr = SceneOrigin.rotation;
+            
+            if (config.transform != null)
+            {
+                if (config.transform.HasTranslation)
+                    sp += SceneOrigin.rotation * config.transform.Translation;
+                if (config.transform.HasRotation)
+                    sr *= config.transform.Rotation;
+            }
 
             float radius = config.json["radius"].AsFloat;
             float height = config.json["height"].AsFloat;

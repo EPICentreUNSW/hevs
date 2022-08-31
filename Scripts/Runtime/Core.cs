@@ -244,6 +244,8 @@ namespace HEVS
 
         static Core instance;
 
+        public static bool VerboseLogging { get; private set; }
+
         /// <summary>
         /// The port that OSC will use for receiving messages.
         /// </summary>
@@ -261,14 +263,23 @@ namespace HEVS
 
             instance = this;
 
+            string[] args = System.Environment.GetCommandLineArgs();
+
+            VerboseLogging = args.Contains("-hevs_verbose");
+
             if (!isActive)
             {
 				if (!UnityEngine.Application.isEditor)
                     debugImpersonateNode = false;
 
+                if (VerboseLogging) Debug.Log("HEVS: Initialising Low-Level Native Plugin");
+
                 Graphics.Initialise();
 
                 // gather custom display types before parsing config
+
+                if (VerboseLogging) Debug.Log("HEVS: Gathering Display Type Definitions");
+
                 Display.GatherCustomDisplayTypes();
 
                 // load hevs config from streaming assets
@@ -284,7 +295,6 @@ namespace HEVS
                     platformName = env;
 
                 // handle command line arguments
-                string[] args = System.Environment.GetCommandLineArgs();
                 for (int i = 0; i < args.Length; i++)
                 {
                     if (args[i].Equals("-nocursor", StringComparison.OrdinalIgnoreCase))
@@ -307,6 +317,8 @@ namespace HEVS
 
                 bool ignoreCluster = (clusterInEditor && UnityEngine.Application.isEditor) || Environment.GetCommandLineArgs().Contains("-nocluster");
 
+                if (VerboseLogging) Debug.Log("HEVS: Configuration json parsed, determining active platform and node configuration.");
+
                 Config.Platform platform;
                 Config.Node node;
                 if (!config.FindPlatformAndNode(platformName, nodeName, out platform, out node))
@@ -314,6 +326,10 @@ namespace HEVS
 
                 activePlatform = platform;
                 activeNode = node;
+
+                if (VerboseLogging) Debug.Log($"HEVS: Active platform [{activePlatform.id}] and active node [{activeNode.id}].");
+
+                if (VerboseLogging) Debug.Log($"HEVS: Creating displays.");
 
                 // create platform displays
                 foreach (var display in activePlatform.displays)
@@ -324,16 +340,29 @@ namespace HEVS
                         activeDisplays.Add(platformDisplays.Last());
                 }
 
+
                 // osc from config
                 if (activePlatform.oscPort.HasValue)
                     _oscPort = activePlatform.oscPort.Value;
                 if (activePlatform.oscEnabled.HasValue)
                     includeOSC = activePlatform.oscEnabled.Value;
 
+                if (VerboseLogging) Debug.Log($"HEVS: Registering static RPC calls.");
+
                 RPC.RegisterStaticRPCalls();
-				Cluster.Initialise(platform.cluster, spawnablePrefabList, randomSeed, clusterInEditor);
+
+                if (VerboseLogging) Debug.Log($"HEVS: Initialising cluster if required.");
+
+                Cluster.Initialise(platform.cluster, spawnablePrefabList, randomSeed, clusterInEditor);
+
+                if (VerboseLogging) Debug.Log($"HEVS: Initialising input system.");
                 new Input();
+
+                if (VerboseLogging) Debug.Log($"HEVS: Checking for VRPN access.");
+
                 VRPN.CheckVRPNAvailable();
+
+                if (VerboseLogging) Debug.Log($"HEVS: Initialising console if requested.");
 
                 if (includeConsole)
                     gameObject.GetOrAddComponent<Console>();
@@ -341,11 +370,19 @@ namespace HEVS
                 isActive = true;
 			}
 
-			Cluster.InitialisePhysics();
+            if (VerboseLogging) Debug.Log($"HEVS: Initialising physics.");
+
+            Cluster.InitialisePhysics();
+
+            if (VerboseLogging) Debug.Log($"HEVS: Gathering Tracker Type Definitions.");
 
             Tracker.GatherCustomTrackerTypes();
 
+            if (VerboseLogging) Debug.Log($"HEVS: Configuraing displays for scene.");
+
             ConfigureCameraAndDisplayForScene();
+
+            if (VerboseLogging) Debug.Log($"HEVS: Initialising cluster IDs.");
 
             // setup cluster IDs
             var cos = GameObject.FindObjectsOfType<ClusterObject>();
@@ -357,7 +394,6 @@ namespace HEVS
 
             if (Cluster.isMaster)
             {
-                string[] args = Environment.GetCommandLineArgs();
                 int index = Array.IndexOf(args, "-logsession");
 #if UNITY_EDITOR
                 if (index > 0 ||
@@ -388,6 +424,8 @@ namespace HEVS
             // only works where user32.dll is available (i.e. Windows)
             if (Application.platform == RuntimePlatform.WindowsPlayer)
             {
+                if (VerboseLogging) Debug.Log($"HEVS: Renaming window for master / client tags.");
+
                 // rename the window
                 var windowPtr = FindWindow(null, Application.productName);
                 if (windowPtr != null)
@@ -395,7 +433,10 @@ namespace HEVS
             }
 
             // start end of frame coroutine?
+            if (VerboseLogging) Debug.Log($"HEVS: Starting EndOfFrame coroutine.");
             StartCoroutine(OnEndOfFrame());
+
+            if (VerboseLogging) Debug.Log($"HEVS: Core initialisation complete.");
         }
 
         [DllImport("user32.dll", EntryPoint = "SetWindowText")]
@@ -418,6 +459,7 @@ namespace HEVS
             if (Cluster.isMaster &&
                 includeOSC)
             {
+                if (VerboseLogging) Debug.Log($"HEVS: Starting OSC.");
                 // setup osc receiver
                 oscReceiver = new OSCsharp.Net.UDPReceiver(oscPort, true);
                 oscReceiver.MessageReceived += OnOSCReceived;
